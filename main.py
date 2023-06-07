@@ -4,7 +4,7 @@ import os
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Add these lines to define the local folder paths
-idealista_path = os.path.join(base_dir, 'idealista')
+idealista_path = os.path.join(base_dir, 'data', 'idealista')
 
 LOCAL_FOLDERS = [idealista_path]
 

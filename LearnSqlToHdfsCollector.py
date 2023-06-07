@@ -13,7 +13,7 @@ class LearnSqlToHdfsCollector:
 
         for local_folder in local_folders:
             folder_name = os.path.basename(local_folder)
-            hdfs_folder_path = self.hdfs_directory + '/' + folder_name
+            hdfs_folder_path = self.hdfs_directory
 
             # Create HDFS directory
             self.hdfs_client.makedirs(hdfs_folder_path, permission=777)

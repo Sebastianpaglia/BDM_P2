@@ -39,7 +39,7 @@ def add_columns(row, value: tuple):
 
 spark = SparkSession.builder \
     .master(f"local[*]") \
-    .appName("List to RDD") \
+    .appName("LandingToFormatted") \
     .getOrCreate()
 
 idealista_selected_columns = ['district', 'neighborhood', 'municipality', 'bathrooms',

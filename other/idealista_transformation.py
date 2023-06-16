@@ -45,7 +45,7 @@ spark = SparkSession.builder \
 idealista_selected_columns = ['district', 'neighborhood', 'municipality', 'bathrooms',
                               'distance', 'exterior', 'floor', 'latitude',
                               'longitude', 'price', 'priceByArea', 'propertyType', 'rooms', 'size', 'status']
-data_idealista_path = 'data/landing_zone/idealista'
+data_idealista_path = '../data/landing_zone/idealista'
 date_folders = os.listdir(data_idealista_path)
 idealista_rdd = spark.sparkContext.parallelize([])
 for folder in date_folders[:10]:
@@ -60,7 +60,7 @@ for folder in date_folders[:10]:
 
 idealista_rdd.toDF(columns).show()
 
-data_incidents_path = 'data/landing_zone/incidents'
+data_incidents_path = '../data/landing_zone/incidents'
 incidents_rdd = spark.read.options(header='True', inferSchema='True', delimiter=',') \
     .csv(data_incidents_path)
 incidents_rdd.show()

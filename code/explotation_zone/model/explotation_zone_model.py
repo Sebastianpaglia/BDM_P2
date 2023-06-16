@@ -9,7 +9,10 @@ from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.ml.regression import RandomForestRegressor, DecisionTreeRegressor, GBTRegressor
 import psycopg2
 from pyspark.sql.functions import regexp_replace
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, FloatType, BooleanType
 
+INCOME_PATH_HDFS = 'https://pidgeotto.fib.upc.es:9864/data/formatted_zone/income/income_formatted_zone'
+IDEALISTA_INCIDENTS_PATH_HDFS = 'https://pidgeotto.fib.upc.es:9864/data/formatted_zone/idealista_incidents/idealista_incidents_formatted_zone'
 
 def connect_postgresql(host, database, user, password):
     conn = psycopg2.connect(
@@ -42,18 +45,18 @@ def close_connection(cursor, conn):
 
 
 def read_directory_parquet_files(directory, spark):
-    search_pattern = os.path.join(directory, '**/*.parquet')
-    parquet_file = glob.glob(search_pattern, recursive=True)
-    rdd = spark.read.parquet(*parquet_file).rdd
+    """search_pattern = os.path.join(directory, '**/*.parquet')
+    parquet_file = glob.glob(search_pattern, recursive=True)"""
+    rdd = spark.read.parquet(*directory).rdd
     return rdd
 
 
 def build_dataset(spark):
-    rdd_idealista_incidents = read_directory_parquet_files('data/formatted_zone/idealista_incidents_formatted_zone',
-                                                           spark)
+    rdd_idealista_incidents = read_directory_parquet_files(IDEALISTA_INCIDENTS_PATH_HDFS,
+        spark)
 
     rdd_idealista_incidents.map(lambda x: x[:5] + (int(x[5]),) + (x[6],) + (int(x[7]),) + x[8:]).first()
-    rdd_income = read_directory_parquet_files('data/formatted_zone/income_formatted_zone', spark)
+    rdd_income = read_directory_parquet_files(INCOME_PATH_HDFS, spark)
 
     rdd_income_mapping = rdd_income.map(
         lambda x: (2020 if x[3] == 2016 else (2021 if x[3] == 2017 else x[3]),) + x[:3] + x[4:])

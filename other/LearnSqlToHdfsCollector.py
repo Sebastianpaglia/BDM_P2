@@ -2,9 +2,10 @@ from hdfs import InsecureClient
 import os
 import datetime
 
+
 class LearnSqlToHdfsCollector:
-    def __init__(self, hdfs_url: str):
-        self.hdfs_directory = 'idealista'
+    def __init__(self, hdfs_url: str, hdfs_directory: str):
+        self.hdfs_directory = hdfs_directory
         self.hdfs_client = InsecureClient(hdfs_url, user='bdm')
 
     def copy_to_hdfs(self, local_folders: list):
@@ -28,3 +29,5 @@ class LearnSqlToHdfsCollector:
                     hdfs_path = hdfs_folder_path + '/' + current_extraction + '/' + file_name + '_' + current_extraction + ext
                     with open(local_path, 'rb') as f:
                         self.hdfs_client.write(hdfs_path, f, overwrite=True)
+
+

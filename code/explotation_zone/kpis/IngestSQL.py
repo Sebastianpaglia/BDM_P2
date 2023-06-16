@@ -8,13 +8,18 @@ from pyspark.ml.feature import OneHotEncoder, StringIndexer, VectorAssembler
 from pyspark.ml import Pipeline
 from pyspark.sql.types import StringType
 
+
+INCOME_PATH_HDFS = 'https://pidgeotto.fib.upc.es:9864/data/formatted_zone/income/income_formatted_zone'
+IDEALISTA_INCIDENTS_PATH_HDFS = 'https://pidgeotto.fib.upc.es:9864/data/formatted_zone/idealista_incidents' \
+                                '/idealista_incidents_formatted_zone '
+
 # Create a SparkSession
 spark = SparkSession.builder \
     .master("local[*]") \
     .appName("FormattedToSQL") \
     .getOrCreate()
 
-rdd_income = spark.read.parquet('data/formatted_zone/income_formatted_zone')
+rdd_income = spark.read.parquet(INCOME_PATH_HDFS)
 table_income = rdd_income.select('year', 'id_neighborhood', 'population', 'RFD')
 table_income1 = table_income.withColumn("year", when(col("year").isin([2016]), 2020).otherwise(col("year")))
 table_income2 = table_income1.withColumn("year", when(col("year").isin([2017]), 2021).otherwise(col("year")))
@@ -23,7 +28,7 @@ table_income2 = table_income2.withColumn("year", table_income2["year"].cast("int
     .withColumn("population", table_income2["population"].cast("integer")) \
     .withColumn("RFD", table_income2["RFD"].cast("double"))
 
-rdd_idealista_incidents = spark.read.parquet('data/formatted_zone/idealista_incidents_formatted_zone')
+rdd_idealista_incidents = spark.read.parquet(IDEALISTA_INCIDENTS_PATH_HDFS)
 rdd_idealista_incidents1 = rdd_idealista_incidents.withColumn("yearmonth", concat(col("year"), col("month")))
 table_price_incidents = rdd_idealista_incidents1.select('year', 'yearmonth', 'id_neighborhood', 'bathrooms', 'distance',
                                                         'exterior',

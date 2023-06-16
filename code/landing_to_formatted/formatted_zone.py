@@ -2,6 +2,10 @@ from pyspark.sql import SparkSession
 import os
 import glob
 from mongo_connector import load_collection
+from datetime import datetime
+
+
+# Create a datetime object
 
 
 def list_to_rdd(spark_connector, list_documents):
@@ -19,7 +23,7 @@ def read_idealista_landing_zone(spark_connector):
     data_idealista_path = 'data/landing_zone/idealista'
     date_folders = os.listdir(data_idealista_path)
     idealista_rdd = spark_connector.sparkContext.parallelize([])
-    for folder in date_folders[:10]:
+    for folder in date_folders:
         search_pattern = os.path.join(data_idealista_path, '**/*.parquet')
         parquet_file = glob.glob(search_pattern, recursive=True)
         idealista_file_df = spark_connector.read.parquet(*parquet_file).select(idealista_selected_columns)
@@ -97,6 +101,14 @@ idealista_incidents_conciled = idealista_conciled.map(lambda x: (x[1] + "_" + st
     .join(incidents_conciled.map(lambda x: (x[1] + "_" + x[5] + "_" + x[6], x))) \
     .map(lambda x: x[1][0] + (x[1][1][8],))
 
+dt = datetime.now()
+
+# Convert datetime to string
+dt_str = dt.strftime('%Y_%m_%d_%H_%M_%S')
+
+# Print the string representation
+print(dt_str)
+
 columns_idealista_incidents = ['district',
                                'id_neighborhood',
                                'neighborhood',
@@ -109,7 +121,8 @@ columns_idealista_incidents = ['district',
                                'size', 'status', 'year', 'month', 'incidents']
 
 df_idealista_incidents = idealista_incidents_conciled.toDF(columns_idealista_incidents)
-df_idealista_incidents.write.parquet('data/formatted_zone/idealista_incidents_formatted_zone')
+df_idealista_incidents.write.parquet('https://pidgeotto.fib.upc.es:9864/data/formatted_zone/idealista_incidents'
+                                     '/idealista_incidents_formatted_zone')
 
 columns_income = ['neighborhood',
                   'id_neighborhood',
@@ -120,6 +133,6 @@ columns_income = ['neighborhood',
 
 df_income = income_conciled.toDF(columns_income)
 
-df_income.write.parquet('data/formatted_zone/income_formatted_zone')
+df_income.write.parquet('https://pidgeotto.fib.upc.es:9864/data/formatted_zone/income/income_formatted_zone')
 # Stop the SparkSession
 spark.stop()

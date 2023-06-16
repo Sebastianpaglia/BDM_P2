@@ -11,7 +11,7 @@ from pyspark.sql.types import StringType
 
 INCOME_PATH_HDFS = 'https://pidgeotto.fib.upc.es:9864/data/formatted_zone/income/income_formatted_zone'
 IDEALISTA_INCIDENTS_PATH_HDFS = 'https://pidgeotto.fib.upc.es:9864/data/formatted_zone/idealista_incidents' \
-                                '/idealista_incidents_formatted_zone '
+                                '/idealista_incidents_formatted_zone
 
 # Create a SparkSession
 spark = SparkSession.builder \
@@ -20,23 +20,20 @@ spark = SparkSession.builder \
     .getOrCreate()
 
 rdd_income = spark.read.parquet(INCOME_PATH_HDFS)
-table_income = rdd_income.select('year', 'id_neighborhood', 'population', 'RFD')
+table_income = rdd_income.select('year', 'id_neighborhood', 'RFD')
 table_income1 = table_income.withColumn("year", when(col("year").isin([2016]), 2020).otherwise(col("year")))
 table_income2 = table_income1.withColumn("year", when(col("year").isin([2017]), 2021).otherwise(col("year")))
 table_income2 = table_income2.withColumn("year", table_income2["year"].cast("integer")) \
     .withColumn("id_neighborhood", table_income2["id_neighborhood"].cast("string")) \
-    .withColumn("population", table_income2["population"].cast("integer")) \
     .withColumn("RFD", table_income2["RFD"].cast("double"))
 
 rdd_idealista_incidents = spark.read.parquet(IDEALISTA_INCIDENTS_PATH_HDFS)
 rdd_idealista_incidents1 = rdd_idealista_incidents.withColumn("yearmonth", concat(col("year"), col("month")))
-table_price_incidents = rdd_idealista_incidents1.select('year', 'yearmonth', 'id_neighborhood', 'bathrooms', 'distance',
-                                                        'exterior',
-                                                        'floor', 'latitude', 'longitude', 'price', 'priceByArea',
-                                                        'propertyType',
-                                                        'rooms', 'size', 'status', 'incidents')
+table_price_incidents = rdd_idealista_incidents1.select('year', 'yearmonth', 'id_neighborhood', 'latitude', 'longitude',
+                                                        'price', 'incidents')
+table_price_incidents.filter((table_price_incidents.id_neighborhood=='Q1026658')&(table_price_incidents.year==2020) &(table_price_incidents.yearmonth.isin(['20208']))).select('price').rdd.count()
 
-table_price_incidents = table_price_incidents.withColumn(
+"""table_price_incidents = table_price_incidents.withColumn(
     "year", col("year").cast("int")).withColumn(
     "yearmonth", col("yearmonth").cast("int")).withColumn(
     "bathrooms", col("bathrooms").cast("int")).withColumn(
@@ -47,21 +44,12 @@ table_price_incidents = table_price_incidents.withColumn(
     "priceByArea", col("priceByArea").cast("float")).withColumn(
     "rooms", col("rooms").cast("int")).withColumn(
     "size", col("size").cast("float")).withColumn(
-    "incidents", col("size").cast("int"))
+    "incidents", col("size").cast("int"))"""
 
 table_price_incidents1 = table_price_incidents.groupBy("year", "yearmonth", "id_neighborhood").agg(
-    avg("bathrooms").alias("bathrooms"),
-    avg("distance").alias("distance"),
-    mode("exterior").alias("exterior"),
-    mode("floor").alias("floor"),
     avg("latitude").alias("latitude"),
     avg("longitude").alias("longitude"),
     avg("price").alias("price"),
-    avg("priceByArea").alias("priceByArea"),
-    mode("propertyType").alias("propertyType"),
-    avg("rooms").alias("rooms"),
-    avg("size").alias("size"),
-    mode("status").alias("status"),
     avg("incidents").alias("incidents")
 )
 

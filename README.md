@@ -1,2 +1,4 @@
 # BDM_P2
- Second project of Big Data Management
+In the folder visualization, the videos of the dashboard and the pipelines images are located.
+
+

@@ -20,7 +20,7 @@ def read_idealista_landing_zone(spark_connector):
     idealista_selected_columns = ['district', 'neighborhood', 'municipality', 'bathrooms',
                                   'distance', 'exterior', 'floor', 'latitude',
                                   'longitude', 'price', 'priceByArea', 'propertyType', 'rooms', 'size', 'status']
-    data_idealista_path = 'data/landing_zone/idealista'
+    data_idealista_path = '/mnt/c/Users/gerar/Desktop/MDS/Q4/BDM/BDM_P2/data/landing_zone/idealista'
     date_folders = os.listdir(data_idealista_path)
     idealista_rdd = spark_connector.sparkContext.parallelize([])
     for folder in date_folders:
@@ -37,7 +37,7 @@ def read_idealista_landing_zone(spark_connector):
 
 
 def read_incidents_landing_zone(spark_connector):
-    data_incidents_path = 'data/landing_zone/incidents'
+    data_incidents_path = '/mnt/c/Users/gerar/Desktop/MDS/Q4/BDM/BDM_P2/data/landing_zone/incidents'
     incidents_rdd = spark_connector.read.options(header='True', inferSchema='True', delimiter=',') \
         .csv(data_incidents_path).rdd
     return incidents_rdd
@@ -91,11 +91,14 @@ income_conciled = prepare_income_formatted_zone(income_rdd_input=income_rdd,
                                                 income_neigh_lookup=income_neigh)
 
 idealista_conciled = prepare_idealista_formatted_zone(idealista_rdd_input=idealista_rdd,
-                                                      idealista_neigh_lookup=rent_neigh)
+                                                     idealista_neigh_lookup=rent_neigh)
+
+idealista_conciled.cache()
 
 incidents_conciled = prepare_incidents_formatted_zone(incidents_rdd_input=incidnets_rdd,
 
                                                       incidents_neigh_lookup=income_neigh)
+incidents_conciled.cache()
 
 idealista_incidents_conciled = idealista_conciled.map(lambda x: (x[1] + "_" + str(x[16]) + "_" + str(x[17]), x)) \
     .join(incidents_conciled.map(lambda x: (x[1] + "_" + x[5] + "_" + x[6], x))) \

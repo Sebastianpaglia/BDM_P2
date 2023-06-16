@@ -1,6 +1,4 @@
 from pyspark.sql import SparkSession
-import os
-import glob
 from pyspark.sql.functions import col, when, median, count, isnull, round, count, mean
 from pyspark.ml.feature import OneHotEncoder, StringIndexer, VectorAssembler
 from pyspark.ml import Pipeline
@@ -9,10 +7,12 @@ from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.ml.regression import RandomForestRegressor, DecisionTreeRegressor, GBTRegressor
 import psycopg2
 from pyspark.sql.functions import regexp_replace
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, FloatType, BooleanType
+from pyspark.ml.util import MLWriter
+from datetime import datetime
 
 INCOME_PATH_HDFS = 'https://pidgeotto.fib.upc.es:9864/data/formatted_zone/income/income_formatted_zone'
 IDEALISTA_INCIDENTS_PATH_HDFS = 'https://pidgeotto.fib.upc.es:9864/data/formatted_zone/idealista_incidents/idealista_incidents_formatted_zone'
+MODEL_HDFS = "hdfs://pidgeotto.fib.upc.es:9864/models"
 
 def connect_postgresql(host, database, user, password):
     conn = psycopg2.connect(
@@ -53,7 +53,7 @@ def read_directory_parquet_files(directory, spark):
 
 def build_dataset(spark):
     rdd_idealista_incidents = read_directory_parquet_files(IDEALISTA_INCIDENTS_PATH_HDFS,
-        spark)
+                                                           spark)
 
     rdd_idealista_incidents.map(lambda x: x[:5] + (int(x[5]),) + (x[6],) + (int(x[7]),) + x[8:]).first()
     rdd_income = read_directory_parquet_files(INCOME_PATH_HDFS, spark)
@@ -115,6 +115,15 @@ def build_pipeline(model):
     return pipeline
 
 
+def save_model_and_datasets(model, train_data, test_data, model_path, spark):
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    writer = MLWriter()
+    writer.save(model, f"{model_path}/model_{timestamp}")
+    train_data.write.parquet(f"{model_path}/train_data_{timestamp}.parquet")
+    test_data.write.parquet(f"{model_path}/test_data_{timestamp}.parquet")
+    print("Model and datasets saved successfully.")
+
+
 spark = SparkSession.builder \
     .master(f"local[*]") \
     .appName("LandingToFormatted") \
@@ -148,14 +157,17 @@ models = {'regression_random_forest': RandomForestRegressor(featuresCol="feature
           'regression_gbt': GBTRegressor(featuresCol='features', labelCol=grown_truth)
           }
 
+df_train_final.cache()
+df_test_final.cache()
 for model_name, model in models.items():
+
     pipeline = build_pipeline(model)
     # Train model.  This also runs the indexer.
     model = pipeline.fit(df_train_final)
     model_type = model_name
     # Make predictions.
     predictions = model.transform(df_test_final)
-
+    save_model_and_datasets(model, df_train_final, df_test_final, MODEL_HDFS)
     # Select (prediction, true label) and compute test error
     evaluator = RegressionEvaluator(
         labelCol=grown_truth, predictionCol="prediction")
